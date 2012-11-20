@@ -1,6 +1,28 @@
 --Tp2.sql
 -- Numéro c5 et le reste
+--C1 Un sigle de cours doit être formé de 3 lettres suivies de quatre chiffres
 
+--ALTER TABLE Cours
+--ADD (CONSTRAINT SigleCours CHECK(REGEXP_LIKE(sigle, '^[A-Z]{3}+[0-9]{4}')))
+--/
+
+--C2 Le nombre de crédits est un entier entre 0 et 99
+--ALTER TABLE Cours
+--ADD (CONSTRAINT NoCredit CHECK(nbCredits < 100 AND nbCredits >= 0))
+--/
+
+-- C3 : La date de fin de session doit être au moins 90 jours après la date 
+--      de début de session
+--ALTER TABLE SessionUqam
+--ADD (CONSTRAINT LongueurSession CHECK(DateFin - DateDebut >= 90))
+--/
+
+--C4 : Si la date d’abandon est non nulle, la note doit être nulle.
+--Fait avec l'équivalence logique (A -> B) <-> (notA V B)
+-- À tester plus tard
+--ALTER TABLE Inscription
+--ADD(CONSTRAINT AbandonNote CHECK(DateAbandon IS NULL OR note IS NULL))
+--/
 
 -- C5: Lorsqu'un étudiant est supprimé, toutes ses inscriptions sont
 --     automatiquement supprimées
@@ -13,6 +35,21 @@ BEGIN
     WHERE codePermanent = :OLD.codePermanent;
 END;
 /
+
+--C6 : Interdire un changement de note de plus de 20 points
+CREATE OR REPLACE TRIGGER BUChangementDeNote 
+BEFORE UPDATE OF note ON Inscription
+REFERENCING
+  OLD AS ligneAvant
+  NEW AS ligneApres
+FOR EACH ROW
+WHEN (ligneApres.note > ligneAvant.note + 20)
+BEGIN
+    raise_application_error(-20999, 'Il est impossible de modifier une note de plus de 20 points.');
+  END
+  
+
+
 
 --Tests pour les contraintes
 
