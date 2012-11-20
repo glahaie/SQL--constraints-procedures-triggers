@@ -1,9 +1,10 @@
 --Tp2.sql
--- Numéro c5 et le reste
+
+SET ECHO ON
 --C1 Un sigle de cours doit être formé de 3 lettres suivies de quatre chiffres
 
 --ALTER TABLE Cours
---ADD (CONSTRAINT SigleCours CHECK(REGEXP_LIKE(sigle, '^[A-Z]{3}+[0-9]{4}')))
+--ADD (CONSTRAINT SigleCours CHECK(REGEXP_LIKE(sigle, '^[a-zA-Z]{3}+[0-9]{4}')))
 --/
 
 --C2 Le nombre de crédits est un entier entre 0 et 99
@@ -37,30 +38,35 @@ END;
 /
 
 --C6 : Interdire un changement de note de plus de 20 points
-CREATE OR REPLACE TRIGGER BUChangementDeNote 
-BEFORE UPDATE OF note ON Inscription
-REFERENCING
-  OLD AS ligneAvant
-  NEW AS ligneApres
+create or replace trigger BUChangementDeNote 
+BEFORE UPDATE ON Inscription
 FOR EACH ROW
-WHEN (ligneApres.note > ligneAvant.note + 20)
+WHEN ((NEW.note > OLD.note + 20) OR (NEW.note < OLD.note - 20))
 BEGIN
-    raise_application_error(-20999, 'Il est impossible de modifier une note de plus de 20 points.');
-  END
+    raise_application_error(-20100, 'Il est impossible de modifier une note de plus de 20 points.');
+END;
+/
   
 
-
-
---Tests pour les contraintes
+--Tests pour les contraintes, ne pas oublier de tester les updates aussi.
 
 --Pour C1: premier insert devrait être accepté
 INSERT INTO Cours
 VALUES('INF3172', 'Système d exploitation', 3)
 /
 
---deuxième insert devrait être accepté aussi.
 INSERT INTO Cours
-VALUES('inf4170', 'Architecture des ordinateurs', 3)
+VALUES('inf3172', 'Systeme d exploitation', 3)
+/
+
+--deuxième insert devrait être accepté aussi, mais le update sera refusé
+INSERT INTO Cours
+VALUES('INF4170', 'Architecture des ordinateurs', 3)
+/
+
+UPDATE Cours
+SET Sigle = '4170INF'
+WHERE Sigle ='INF4170'
 /
 
 --les autres insert devrait être refusés
@@ -107,4 +113,74 @@ VALUES(32005, '01-01-13', '01-03-13')
 INSERT INTO SessionUQAM
 VALUES(32006, '01-01-13', '31-03-13')
 /
+
+--Pour C4: Vérification avec update et insert
+-- Deux erreurs avec update
+UPDATE Inscription
+SET note = 75
+WHERE  codePermanent = 'VANV05127201' and sigle = 'INF5180'
+/
+
+UPDATE Inscription
+SET dateAbandon = '20/09/03'
+WHERE codePermanent = 'MONC05127201' and sigle = 'INF3180'
+/
+
+--Un update qui devrait être accepté
+UPDATE Inscription
+SET dateAbandon = '20/09/03', note = NULL
+WHERE sigle = 'EMEK10106501' AND sigle = 'INF3180'
+/
+
+--Insert qui fonctionne, et update aussi
+INSERT INTO Inscription
+VALUES('VANV05127201', 'INF5180', 10, 12004, '15/12/03', NULL, NULL)
+/
+
+UPDATE Inscription
+SET note = 80
+WHERE codePermanent = 'VANV05127201' and sigle = 'INF5180'
+/
+
+--Insert qui ne fonctionne pas
+INSERT INTO Inscription
+VALUES('VANV05127201', 'INF1110', 20, 32003, '17/08/03', '20/09/03', 80)
+/
+
+--Pour C5: un essai pour le moment
+DELETE FROM Etudiant
+WHERE codePermanent = 'VANV05127201'
+/
+
+
+--Pour C6: Vérification des updates
+UPDATE Inscription
+SET note = 65
+WHERE codePermanent = 'MARA25087501' AND sigle = 'INF1130'
+/
+
+UPDATE Inscription
+SET note = 75
+WHERE codePermanent = 'MARA25087501' AND sigle = 'INF1130'
+/
+
+UPDATE Inscription
+SET note = 96
+WHERE codePermanent = 'STEG03106901' AND sigle = 'INF2110'
+/
+
+UPDATE Inscription
+SET note = 85
+WHERE codePermanent = 'STEG03106901' AND sigle = 'INF2110'
+/
+
+
+--Vérification sur un changement sur plusieurs lignes
+UPDATE Inscription
+SET note = 55
+WHERE sigle='INF3180' AND noGroupe = 30
+/
+
+
+
 
