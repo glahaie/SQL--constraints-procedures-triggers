@@ -41,9 +41,10 @@ END;
 create or replace trigger BUChangementDeNote 
 BEFORE UPDATE ON Inscription
 FOR EACH ROW
-WHEN ((NEW.note > OLD.note + 20) OR (NEW.note < OLD.note - 20))
 BEGIN
+IF ((:NEW.note > :OLD.note + 20) OR (:NEW.note < :OLD.note -20)) THEN
     raise_application_error(-20100, 'Il est impossible de modifier une note de plus de 20 points.');
+END IF;
 END;
 /
   
@@ -177,9 +178,103 @@ WHERE codePermanent = 'STEG03106901' AND sigle = 'INF2110'
 
 --Vérification sur un changement sur plusieurs lignes
 UPDATE Inscription
-SET note = 55
-WHERE sigle='INF3180' AND noGroupe = 30
+SET note = 95
+WHERE sigle='INF3180' AND noGroupe = 40
 /
+
+--Cette mise-à-jour sur plusieurs lignes devraient fonctionner.
+UPDATE Inscription
+SET note = 90
+WHERE sigle='INF1110' AND noGroupe = 20
+/
+
+ROLLBACK
+/
+
+---------------------------------------------------------------------------
+--C7: Ajout de la cote à la table Inscription
+ALTER TABLE Inscription
+ADD cote  CHAR(1)
+CONSTRAINT BonneCote CHECK(cote IS NULL or cote IN ('A','B','C','D','E'))
+/
+
+
+--Fonction fCotePourNote
+CREATE OR REPLACE FUNCTION fCotePourNote(
+  laNote  inscription.note%TYPE)
+  RETURN Inscription.cote%TYPE
+IS
+  laCote  Inscription.cote%TYPE;
+BEGIN
+  IF(laNote >100 or laNote < 0) THEN
+    raise_application_error(-20100, 'Mauvaise note');
+  ELSIF (laNote IS NULL) THEN
+      laCote := NULL;
+  ELSIF (laNote >=90) THEN
+      laCote := 'A';
+  ELSIF (laNote < 90 AND laNote >= 80) THEN
+      laCote := 'B';
+  ELSIF (laNote < 80 AND laNote >= 70) THEN
+    laCote := 'C';
+  ELSIF (laNote < 70 AND laNote >= 60) THEN
+    laCote := 'D';
+  ELSE
+    laCote :='E';
+  END IF;
+  
+  RETURN laCote;
+END;
+
+UPDATE Inscription
+SET COTE = fcotepournote(note)
+/
+
+SELECT *
+FROM INSCRIPTION
+
+--------------------------------------------------------------------------------
+--C4 procédure
+create or replace PROCEDURE pBulletin
+  (leCodePermanent  Inscription.codepermanent%TYPE)
+IS
+leNom       etudiant.nom%TYPE;
+lePrenom    etudiant.prenom%TYPE;
+leSigle     Inscription.sigle%TYPE;
+leGroupe    Inscription.noGroupe%TYPE;
+laSession   Inscription.codeSession%TYPE;
+laNote      Inscription.note%TYPE;
+laCote      Inscription.cote%TYPE;
+
+CURSOR touteInscription
+(unCodePermanent  inscription.codepermanent%TYPE) IS
+SELECT sigle, noGroupe, codeSession, note, cote
+FROM Inscription
+WHERE codePermanent = unCodePermanent;
+
+BEGIN
+dbms_output.put_line('code permament: ' || leCodePermanent);
+
+SELECT nom, prenom INTO leNom, lePrenom
+FROM Etudiant
+WHERE codePermanent = leCodePermanent;
+
+DBMS_OUTPUT.PUT_LINE('nom: ' || leNom);
+DBMS_OUTPUT.PUT_LINE('prenom: ' || lePrenom);
+
+DBMS_OUTPUT.PUT_LINE('sigle   noGroupe  session note  cote');
+
+OPEN touteInscription(leCodePermanent);
+
+LOOP
+  FETCH touteInscription INTO leSigle, leGroupe, laSession, laNote, laCote;
+  EXIT WHEN touteInscription%NOTFOUND;
+  DBMS_OUTPUT.PUT_LINE(leSigle || ' ' || leGroupe || ' ' || laSession || ' ' 
+                      || laNote || ' ' || laCote);
+  
+END LOOP;
+CLOSE touteInscription;
+END;
+
 
 
 
