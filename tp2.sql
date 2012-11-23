@@ -201,10 +201,10 @@ CONSTRAINT BonneCote CHECK(cote IS NULL or cote IN ('A','B','C','D','E'))
 
 --Fonction fCotePourNote
 CREATE OR REPLACE FUNCTION fCotePourNote(
-  laNote  inscription.note%TYPE)
-  RETURN Inscription.cote%TYPE
+  laNote  NUMBER)
+  RETURN CHAR(1)
 IS
-  laCote  Inscription.cote%TYPE;
+  laCote  CHAR(1);
 BEGIN
   IF(laNote >100 or laNote < 0) THEN
     raise_application_error(-20100, 'Mauvaise note');
@@ -224,6 +224,7 @@ BEGIN
   
   RETURN laCote;
 END;
+/
 
 UPDATE Inscription
 SET COTE = fcotepournote(note)
@@ -274,6 +275,34 @@ LOOP
 END LOOP;
 CLOSE touteInscription;
 END;
+/
+
+--5. Trigger qui calcule automatiquement la cote suite à une insertion
+--   ou mise-à-jour d'inscription
+create or replace trigger AUMiseAJourNote
+BEFORE INSERT OR UPDATE OF note ON Inscription
+FOR EACH ROW
+
+BEGIN
+    IF (:NEW.note IS NOT NULL) THEN
+      :NEW.cote:=fCotePourNote(:NEW.note);
+    END IF;
+END;
+/
+
+--6. Création de la vue MoyenneParGroupe
+CREATE OR REPLACE VIEW MoyenneParGroupe AS
+SELECT sigle, noGroupe, codeSession, AVG(note) AS moyenne
+FROM Inscription
+GROUP BY sigle, noGroupe, codeSession
+ORDER BY sigle, noGroupe, codeSession
+/
+
+--Vérification de la vue
+SELECT *
+FROM MoyenneParGroupe
+/
+
 
 
 
