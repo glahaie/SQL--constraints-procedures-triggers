@@ -303,8 +303,42 @@ SELECT *
 FROM MoyenneParGroupe
 /
 
+create or replace TRIGGER BUChangementMoyenne 
+INSTEAD OF UPDATE ON MoyenneParGroupe
+REFERENCING
+  OLD AS ligneAvant
+  NEW AS ligneApres
+FOR EACH ROW
+DECLARE
+leCodePermanent Inscription.codePermanent%TYPE;
+leSigle   Inscription.sigle%TYPE;
+leGroupe  Inscription.codeSession%TYPE;
+leCodeSession   Inscription.codeSession%TYPE;
+laNote    Inscription.note%TYPE;
 
+CURSOR lignesInscription IS
+SELECT codePermanent, sigle, noGroupe, codeSession, note
+FROM Inscription
+WHERE sigle = :ligneApres.sigle AND noGroupe = :ligneApres.noGroupe 
+AND codeSession = :ligneApres.codeSession;
+BEGIN
+OPEN lignesInscription;
+LOOP
+  FETCH lignesInscription INTO leCodePermanent, leSigle, leGroupe, leCodeSession, laNote;
+  EXIT WHEN lignesInscription%NOTFOUND;
 
+  IF (laNote IS NOT NULL) THEN
+    UPDATE Inscription
+    SET note = (laNote - :ligneAvant.moyenne) + :ligneApres.moyenne
+    WHERE codePermanent = leCodePermanent AND sigle = leSigle AND
+    codeSession = leCodeSession AND noGroupe = leGroupe;
+  END IF;
 
+END LOOP;
 
+CLOSE lignesInscription;
+END;
+/
+
+--Test du trigger
 
