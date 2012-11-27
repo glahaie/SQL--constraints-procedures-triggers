@@ -157,23 +157,23 @@ ROLLBACK
 -- d'ajouter une date d'abandon.
 UPDATE Inscription
 SET note = 75
-WHERE  codePermanent = 'VANV05127201' and sigle = 'INF5180'
+WHERE  codePermanent = 'MONC05127201' and sigle = 'INF5180'
 /
 
 UPDATE Inscription
-SET dateAbandon = '20/09/03'
+SET dateAbandon = '20/09/2003'
 WHERE codePermanent = 'MONC05127201' and sigle = 'INF3180'
 /
 
 --Un UPDATE qui est accepté.
 UPDATE Inscription
-SET dateAbandon = '20/09/03', note = NULL
-WHERE sigle = 'EMEK10106501' AND sigle = 'INF3180'
+SET dateAbandon = '20/09/2003', note = NULL
+WHERE codePermanent = 'EMEK10106501' AND sigle = 'INF3180'
 /
 
 --INSERT qui fonctionne, et UPDATE aussi.
 INSERT INTO Inscription
-VALUES('VANV05127201', 'INF5180', 10, 12004, '15/12/03', NULL, NULL)
+VALUES('VANV05127201', 'INF5180', 10, 12004, '15/12/2003', NULL, NULL)
 /
 
 UPDATE Inscription
@@ -183,7 +183,7 @@ WHERE codePermanent = 'VANV05127201' and sigle = 'INF5180'
 
 --INSERT qui ne fonctionne pas
 INSERT INTO Inscription
-VALUES('VANV05127201', 'INF1110', 20, 32003, '17/08/03', '20/09/03', 80)
+VALUES('VANV05127201', 'INF1110', 20, 32003, '17/08/2003', '20/09/2003', 80)
 /
 
 ROLLBACK
@@ -191,10 +191,21 @@ ROLLBACK
 
 --Pour C5: 
 -- On efface un codePermanent qui existe, et ensuite un qui n'existe pas.
+SELECT *
+FROM Inscription
+WHERE codePermanent = 'VANV05127201'
+/
+
 DELETE FROM Etudiant
 WHERE codePermanent = 'VANV05127201'
 /
 
+SELECT *
+FROM Inscription
+WHERE codePermanent = 'VANV05127201'
+/
+
+--Tentative pour un code permanent inexistant.
 DELETE FROM Etudiant
 WHERE codePermanent = 'LAHG04077707'
 /
@@ -399,7 +410,7 @@ FROM MoyenneParGroupe
 /
 
 --Définition du déclencheur.
-CREATE OR REPLACE TRIGGER BUChangementMoyenne 
+CREATE OR REPLACE TRIGGER IUChangementMoyenne 
 INSTEAD OF UPDATE ON MoyenneParGroupe
 REFERENCING
   OLD AS ligneAvant
@@ -420,14 +431,22 @@ CURSOR lignesInscription IS
   
 BEGIN
 
+--Vérification de la nouvelle valeur de la moyenne
+IF (:ligneApres.moyenneNote < 0 OR :ligneApres.moyenneNote > 100 OR 
+    :ligneApres.moyenneNote IS NULL) THEN
+
+  raise_application_error(-20100, 'Moyenne invalide');
+END IF;
+
 OPEN lignesInscription;
 LOOP
-  FETCH lignesInscription INTO leCodePermanent, leSigle, leGroupe, leCodeSession, laNote;
+  FETCH lignesInscription INTO leCodePermanent, leSigle, leGroupe, 
+        leCodeSession, laNote;
   EXIT WHEN lignesInscription%NOTFOUND;
 
   IF (laNote IS NOT NULL) THEN
     UPDATE Inscription
-    SET note = (laNote - :ligneAvant.moyenne) + :ligneApres.moyenne
+    SET note = (laNote - :ligneAvant.moyenneNote) + :ligneApres.moyenneNote
     WHERE codePermanent = leCodePermanent AND sigle = leSigle AND
     codeSession = leCodeSession AND noGroupe = leGroupe;
   END IF;
@@ -438,5 +457,42 @@ CLOSE lignesInscription;
 END;
 /
 
---Test du trigger
+--Test du déclencheur
+UPDATE MoyenneParGroupe
+SET MoyenneNote = 70
+WHERE sigle = 'INF1130' AND noGroupe = 10 AND codeSession = 32003
+/
 
+SELECT * 
+FROM MoyenneParGroupe
+WHERE sigle = 'INF1130' AND noGroupe = 10 AND codesession = 32003
+/
+
+SELECT *
+FROM Inscription
+WHERE sigle = 'INF1130' AND noGroupe = 10 AND codesession = 32003
+/
+
+--Changements de moyenne qui ne fonctionne pas
+UPDATE MoyenneParGroupe
+SET MoyenneNote = NULL
+WHERE sigle = 'INF1130' AND noGroupe = 10 AND codeSession = 32003
+/
+
+--Ici la contrainte d'intégrité de changement de note sur inscription devrait
+--refuser cette mise à jour
+UPDATE MoyenneParGroupe
+SET MoyenneNote = 40
+WHERE sigle = 'INF1130' AND noGroupe = 10 AND codeSession = 32003
+/
+
+UPDATE MoyenneParGroupe
+SET MoyenneNote = 120
+WHERE sigle = 'INF1130' AND noGroupe = 10 AND codeSession = 32003
+/
+
+ROLLBACK
+/
+
+SET ECHO OFF
+SPOOL OFF
