@@ -14,7 +14,6 @@ ALTER SESSION SET NLS_DATE_FORMAT = 'DD/MM/YYYY'
 
 --C1 Un sigle de cours doit être formé de 3 lettres suivies de quatre chiffres
 --Pour le moment, on accepte les lettres majuscules et minuscules.
-
 ALTER TABLE Cours
 ADD (CONSTRAINT SigleCours CHECK(REGEXP_LIKE(sigle, '^[a-zA-Z]{3}+[0-9]{4}')))
 /
@@ -60,10 +59,9 @@ END IF;
 END;
 /
   
-
 --2. Insertion des données et tests de contraintes.
 
---Pour C1: 
+--Tests pour C1: 
 --Deux INSERT acceptés
 INSERT INTO Cours
 VALUES('INF3172', 'Système d exploitation', 3)
@@ -99,7 +97,7 @@ VALUES('INFF417', 'Architecture des ordinateurs', 3)
 ROLLBACK
 /
 
---Pour C2: 
+--Tests pour C2: 
 --Le premier INSERT est accepté, alors que les deux autres rejetés
 INSERT INTO Cours
 VALUES('INF5151', 'Génie Logiciel', 3)
@@ -127,9 +125,9 @@ WHERE sigle = 'INF3123'
 ROLLBACK
 /
 
---Pour C3: 
+--Test pour C3: 
 --La première valeur devrait être insérée dans la table, alors que les autres 
---donneront un erreur d'intégrité. Le UPDATE est refusé aussi
+--donneront un erreur d'intégrité. Le UPDATE est refusé aussi.
 INSERT INTO SessionUQAM
 VALUES(32004, '01/01/2013', '30/04/2013')
 /
@@ -150,11 +148,11 @@ WHERE codeSession = 32004
 ROLLBACK
 /
 
---Pour C4: 
+--Tests pour C4: 
 --Vérification avec UPDATE et INSERT
--- Deux erreurs avec UPDATE. Le premier, la date d'abandon est non-nulle et
--- on tente d'ajouter une note, Le second, la note est non-nulle et on tente
--- d'ajouter une date d'abandon.
+--Deux erreurs avec UPDATE. Le premier, la date d'abandon est non-nulle et
+--on tente d'ajouter une note, Le second, la note est non-nulle et on tente
+--d'ajouter une date d'abandon.
 UPDATE Inscription
 SET note = 75
 WHERE  codePermanent = 'MONC05127201' and sigle = 'INF5180'
@@ -171,7 +169,7 @@ SET dateAbandon = '20/09/2003', note = NULL
 WHERE codePermanent = 'EMEK10106501' AND sigle = 'INF3180'
 /
 
---INSERT qui fonctionne, et UPDATE aussi.
+--Un INSERT qui fonctionne, et UPDATE aussi.
 INSERT INTO Inscription
 VALUES('VANV05127201', 'INF5180', 10, 12004, '15/12/2003', NULL, NULL)
 /
@@ -181,7 +179,7 @@ SET note = 80
 WHERE codePermanent = 'VANV05127201' and sigle = 'INF5180'
 /
 
---INSERT qui ne fonctionne pas
+--Un INSERT qui ne fonctionne pas.
 INSERT INTO Inscription
 VALUES('VANV05127201', 'INF1110', 20, 32003, '17/08/2003', '20/09/2003', 80)
 /
@@ -189,8 +187,9 @@ VALUES('VANV05127201', 'INF1110', 20, 32003, '17/08/2003', '20/09/2003', 80)
 ROLLBACK
 /
 
---Pour C5: 
--- On efface un codePermanent qui existe, et ensuite un qui n'existe pas.
+--Tests pour C5: 
+--On efface un codePermanent qui existe. On affiche les cours dans la table
+--Inscription avant le DELETE de la table Etudiant et après.
 SELECT *
 FROM Inscription
 WHERE codePermanent = 'VANV05127201'
@@ -213,10 +212,8 @@ WHERE codePermanent = 'LAHG04077707'
 ROLLBACK
 /
 
---Pour C6: 
---Vérification des UPDATE.
-
---UPDATE refusé.
+--Test pour C6: 
+--Vérification des UPDATE. Un UPDATE refusé.
 UPDATE Inscription
 SET note = 65
 WHERE codePermanent = 'MARA25087501' AND sigle = 'INF1130'
@@ -246,7 +243,7 @@ SET note = 95
 WHERE sigle='INF3180' AND noGroupe = 40
 /
 
---Cette mise-à-jour sur plusieurs lignes est acceptée.
+--Un UPDATE sur plusieurs lignes acceptées.
 UPDATE Inscription
 SET note = 90
 WHERE sigle='INF1110' AND noGroupe = 20
@@ -255,14 +252,14 @@ WHERE sigle='INF1110' AND noGroupe = 20
 ROLLBACK
 /
 
----------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 --3. Ajout de la cote à la Table Inscription.
 
 --C7: Ajout de la colonne et de la contrainte à la table Inscription
 ALTER TABLE Inscription
 ADD cote  CHAR(1)
-CONSTRAINT BonneCote CHECK(cote IS NULL OR cote IN ('A','B','C','D','E'))
+CONSTRAINT BonneCote CHECK(cote IN ('A','B','C','D','E'))
 /
 
 --Fonction fCotePourNote: traite les cas pour 
@@ -306,7 +303,7 @@ FROM INSCRIPTION
 
 --4. Création d'une procédure PL/SQL pBulletin. La procédure affiche un message
 --   si un le codePermanent n'existe pas, ou si le codePermanent n'a pas de cous
---   dans la table Inscription.
+--   dans la table Inscription. Cas non-traité: cours abandonné.
 
 CREATE OR REPLACE PROCEDURE pBulletin
   (leCodePermanent  Inscription.codepermanent%TYPE)
@@ -394,6 +391,29 @@ BEGIN
 END;
 /
 
+--Tests du déclencheur.
+INSERT INTO Inscription
+VALUES('DUGR08085001','INF1110',20,32003,'16/08/2003',NULL,80,NULL)
+/
+
+SELECT *
+FROM Inscription
+WHERE codePermanent='DUGR08085001' AND sigle='INF1110' AND noGroupe=20
+AND codeSession=32003
+/
+
+UPDATE Inscription
+SET note= 70
+WHERE codePermanent='DUGR08085001' AND sigle='INF1110' AND noGroupe = 20
+AND codeSession = 32003
+/
+
+SELECT *
+FROM Inscription
+WHERE codePermanent='DUGR08085001' AND sigle='INF1110' AND noGroupe=20
+AND codeSession=32003
+/
+--Le déclencheur est aussi testé lors du numéro 6.
 --------------------------------------------------------------------------------
 
 --6. Création de la vue MoyenneParGroupe
