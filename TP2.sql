@@ -2,7 +2,7 @@ SET ECHO ON
 SET SERVEROUTPUT ON
 SPOOL TP2.out
 
--- Tp2.sql
+-- TP2.sql
 -- Par Guillaume Lahaie
 -- LAHG04077707
 -- Remise: 12 décembre 2012
