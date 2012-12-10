@@ -15,7 +15,7 @@ SQL>
 SQL> --C1 Un sigle de cours doit être formé de 3 lettres suivies de quatre chiffres
 SQL> --Pour le moment, on accepte les lettres majuscules et minuscules.
 SQL> ALTER TABLE Cours
-  2  ADD (CONSTRAINT SigleCours CHECK(REGEXP_LIKE(sigle, '^[a-zA-Z]{3}+[0-9]{4}')))
+  2  ADD (CONSTRAINT SigleCours CHECK(REGEXP_LIKE(sigle, '^[a-zA-Z]{3}[0-9]{4}')))
   3  /
 
 Table altered.
@@ -110,7 +110,7 @@ SQL> UPDATE Cours
 UPDATE Cours
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.SIGLECOURS) violated 
+ORA-02290: check constraint (GK491589.SIGLECOURS) violated 
 
 
 SQL> 
@@ -121,7 +121,7 @@ SQL> INSERT INTO Cours
 INSERT INTO Cours
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.SIGLECOURS) violated 
+ORA-02290: check constraint (GK491589.SIGLECOURS) violated 
 
 
 SQL> 
@@ -131,7 +131,7 @@ SQL> INSERT INTO Cours
 INSERT INTO Cours
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.SIGLECOURS) violated 
+ORA-02290: check constraint (GK491589.SIGLECOURS) violated 
 
 
 SQL> 
@@ -141,7 +141,7 @@ SQL> INSERT INTO Cours
 INSERT INTO Cours
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.SIGLECOURS) violated 
+ORA-02290: check constraint (GK491589.SIGLECOURS) violated 
 
 
 SQL> 
@@ -166,7 +166,7 @@ SQL> INSERT INTO Cours
 INSERT INTO Cours
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.NOCREDIT) violated 
+ORA-02290: check constraint (GK491589.NOCREDIT) violated 
 
 
 SQL> 
@@ -176,7 +176,7 @@ SQL> INSERT INTO Cours
 INSERT INTO Cours
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.NOCREDIT) violated 
+ORA-02290: check constraint (GK491589.NOCREDIT) violated 
 
 
 SQL> 
@@ -196,7 +196,7 @@ SQL> UPDATE Cours
 UPDATE Cours
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.NOCREDIT) violated 
+ORA-02290: check constraint (GK491589.NOCREDIT) violated 
 
 
 SQL> 
@@ -222,7 +222,7 @@ SQL> INSERT INTO SessionUQAM
 INSERT INTO SessionUQAM
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.LONGUEURSESSION) violated 
+ORA-02290: check constraint (GK491589.LONGUEURSESSION) violated 
 
 
 SQL> 
@@ -232,7 +232,7 @@ SQL> INSERT INTO SessionUQAM
 INSERT INTO SessionUQAM
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.LONGUEURSESSION) violated 
+ORA-02290: check constraint (GK491589.LONGUEURSESSION) violated 
 
 
 SQL> 
@@ -243,7 +243,7 @@ SQL> UPDATE SessionUQAM
 UPDATE SessionUQAM
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.LONGUEURSESSION) violated 
+ORA-02290: check constraint (GK491589.LONGUEURSESSION) violated 
 
 
 SQL> 
@@ -265,7 +265,7 @@ SQL> UPDATE Inscription
 UPDATE Inscription
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.ABANDONNOTE) violated 
+ORA-02290: check constraint (GK491589.ABANDONNOTE) violated 
 
 
 SQL> 
@@ -276,7 +276,7 @@ SQL> UPDATE Inscription
 UPDATE Inscription
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.ABANDONNOTE) violated 
+ORA-02290: check constraint (GK491589.ABANDONNOTE) violated 
 
 
 SQL> 
@@ -312,7 +312,7 @@ SQL> INSERT INTO Inscription
 INSERT INTO Inscription
 *
 ERROR at line 1:
-ORA-02290: check constraint (GUILLAUME.ABANDONNOTE) violated 
+ORA-02290: check constraint (GK491589.ABANDONNOTE) violated 
 
 
 SQL> 
@@ -325,21 +325,14 @@ SQL>
 SQL> --Tests pour C5:
 SQL> --On efface un codePermanent qui existe. On affiche les cours dans la table
 SQL> --Inscription avant le DELETE de la table Etudiant et après.
-SQL> SELECT *
+SQL> SELECT COUNT(*)
   2  FROM Inscription
   3  WHERE codePermanent = 'VANV05127201'
   4  /
 
-CODEPERMANENT                        SIGLE                   NOGROUPE           
------------------------------------- --------------------- ----------           
-CODESESSION DATEINSCRI DATEABANDO       NOTE                                    
------------ ---------- ---------- ----------                                    
-VANV05127201                         INF3180                       10           
-      12004 18/12/2003                    90                                    
-                                                                                
-VANV05127201                         INF3180                       30           
-      32003 16/08/2003 20/09/2003                                               
-                                                                                
+  COUNT(*)                                                                      
+----------                                                                      
+         2                                                                      
 
 SQL> 
 SQL> DELETE FROM Etudiant
@@ -349,20 +342,14 @@ SQL> DELETE FROM Etudiant
 1 row deleted.
 
 SQL> 
-SQL> SELECT *
+SQL> SELECT COUNT(*)
   2  FROM Inscription
   3  WHERE codePermanent = 'VANV05127201'
   4  /
 
-no rows selected
-
-SQL> 
-SQL> --Tentative pour un code permanent inexistant.
-SQL> DELETE FROM Etudiant
-  2  WHERE codePermanent = 'LAHG04077707'
-  3  /
-
-0 rows deleted.
+  COUNT(*)                                                                      
+----------                                                                      
+         0                                                                      
 
 SQL> 
 SQL> ROLLBACK
@@ -382,8 +369,8 @@ UPDATE Inscription
 ERROR at line 1:
 ORA-20100: Impossible de modifier une note 
 de plus de 20 points.
-ORA-06512: at "GUILLAUME.BUCHANGEMENTDENOTE", line 3
-ORA-04088: error during execution of trigger 'GUILLAUME.BUCHANGEMENTDENOTE' 
+ORA-06512: at "GK491589.BUCHANGEMENTDENOTE", line 3
+ORA-04088: error during execution of trigger 'GK491589.BUCHANGEMENTDENOTE' 
 
 
 SQL> 
@@ -406,8 +393,8 @@ UPDATE Inscription
 ERROR at line 1:
 ORA-20100: Impossible de modifier une note 
 de plus de 20 points.
-ORA-06512: at "GUILLAUME.BUCHANGEMENTDENOTE", line 3
-ORA-04088: error during execution of trigger 'GUILLAUME.BUCHANGEMENTDENOTE' 
+ORA-06512: at "GK491589.BUCHANGEMENTDENOTE", line 3
+ORA-04088: error during execution of trigger 'GK491589.BUCHANGEMENTDENOTE' 
 
 
 SQL> 
@@ -430,8 +417,8 @@ UPDATE Inscription
 ERROR at line 1:
 ORA-20100: Impossible de modifier une note 
 de plus de 20 points.
-ORA-06512: at "GUILLAUME.BUCHANGEMENTDENOTE", line 3
-ORA-04088: error during execution of trigger 'GUILLAUME.BUCHANGEMENTDENOTE' 
+ORA-06512: at "GK491589.BUCHANGEMENTDENOTE", line 3
+ORA-04088: error during execution of trigger 'GK491589.BUCHANGEMENTDENOTE' 
 
 
 SQL> 
@@ -695,8 +682,8 @@ code permament: VANV05127201
 nom: Van Gogh                                                                   
 prenom: Vincent                                                                 
 sigle   noGroupe  session note  cote                                            
-INF3180 10        12004   90    A                                               
 INF3180 30        32003                                                         
+INF3180 10        12004   90    A                                               
 
 PL/SQL procedure successfully completed.
 
@@ -928,8 +915,8 @@ UPDATE MoyenneParGroupe
        *
 ERROR at line 1:
 ORA-20100: Moyenne invalide
-ORA-06512: at "GUILLAUME.IUCHANGEMENTMOYENNE", line 20
-ORA-04088: error during execution of trigger 'GUILLAUME.IUCHANGEMENTMOYENNE' 
+ORA-06512: at "GK491589.IUCHANGEMENTMOYENNE", line 20
+ORA-04088: error during execution of trigger 'GK491589.IUCHANGEMENTMOYENNE' 
 
 
 SQL> 
@@ -944,10 +931,10 @@ UPDATE MoyenneParGroupe
 ERROR at line 1:
 ORA-20100: Impossible de modifier une note 
 de plus de 20 points.
-ORA-06512: at "GUILLAUME.BUCHANGEMENTDENOTE", line 3
-ORA-04088: error during execution of trigger 'GUILLAUME.BUCHANGEMENTDENOTE'
-ORA-06512: at "GUILLAUME.IUCHANGEMENTMOYENNE", line 30
-ORA-04088: error during execution of trigger 'GUILLAUME.IUCHANGEMENTMOYENNE' 
+ORA-06512: at "GK491589.BUCHANGEMENTDENOTE", line 3
+ORA-04088: error during execution of trigger 'GK491589.BUCHANGEMENTDENOTE'
+ORA-06512: at "GK491589.IUCHANGEMENTMOYENNE", line 30
+ORA-04088: error during execution of trigger 'GK491589.IUCHANGEMENTMOYENNE' 
 
 
 SQL> 
@@ -959,8 +946,8 @@ UPDATE MoyenneParGroupe
        *
 ERROR at line 1:
 ORA-20100: Moyenne invalide
-ORA-06512: at "GUILLAUME.IUCHANGEMENTMOYENNE", line 20
-ORA-04088: error during execution of trigger 'GUILLAUME.IUCHANGEMENTMOYENNE' 
+ORA-06512: at "GK491589.IUCHANGEMENTMOYENNE", line 20
+ORA-04088: error during execution of trigger 'GK491589.IUCHANGEMENTMOYENNE' 
 
 
 SQL> 

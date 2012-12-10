@@ -15,7 +15,7 @@ ALTER SESSION SET NLS_DATE_FORMAT = 'DD/MM/YYYY'
 --C1 Un sigle de cours doit être formé de 3 lettres suivies de quatre chiffres
 --Pour le moment, on accepte les lettres majuscules et minuscules.
 ALTER TABLE Cours
-ADD (CONSTRAINT SigleCours CHECK(REGEXP_LIKE(sigle, '^[a-zA-Z]{3}+[0-9]{4}')))
+ADD (CONSTRAINT SigleCours CHECK(REGEXP_LIKE(sigle, '^[a-zA-Z]{3}[0-9]{4}')))
 /
 
 --C2 Le nombre de crédits est un entier entre 0 et 99
@@ -190,7 +190,7 @@ ROLLBACK
 --Tests pour C5: 
 --On efface un codePermanent qui existe. On affiche les cours dans la table
 --Inscription avant le DELETE de la table Etudiant et après.
-SELECT *
+SELECT COUNT(*)
 FROM Inscription
 WHERE codePermanent = 'VANV05127201'
 /
@@ -199,14 +199,9 @@ DELETE FROM Etudiant
 WHERE codePermanent = 'VANV05127201'
 /
 
-SELECT *
+SELECT COUNT(*)
 FROM Inscription
 WHERE codePermanent = 'VANV05127201'
-/
-
---Tentative pour un code permanent inexistant.
-DELETE FROM Etudiant
-WHERE codePermanent = 'LAHG04077707'
 /
 
 ROLLBACK
